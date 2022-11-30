@@ -1,0 +1,49 @@
+openapi: 3.0.0
+info:
+  title: CrackStation  OpenAPI
+  description: Input any password that matches the regex [A-Za-z0-1?!]{1,3} in either SHA-1 or SHA-256 and return the regex [A-Za-z0-1?!]{1,3}
+  version: 1.0.0
+servers:
+  - url:  https://2ikp5bm184.execute-api.us-east-1.amazonaws.com
+    
+paths:
+ /password/{shaHash}:
+    get:
+      tags:
+        - password
+      summary: Input SHA-1 or SHA-256 hash code
+      description: Returns the regex [A-Za-z0-1?!]{1,3} charactrer
+      operationId: getpassword
+      parameters:
+        - name: shaHash
+          in: path
+          description:  SHA-1 or SHA-256 hash code
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  62c66a7a5dd70c3146618063c344e531e6d4b59e379808443ce962b3abd63c5a:
+                    type: string
+                    example: m
+
+        '404':
+          description: Not in Hash-1 or Hash-256 dictionary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: 
+                  sha:
+                    type: string
+                example: 
+                  " message : Not in SHA-1 or SHA-256 dictionary "
+
+
+                  
