@@ -1,35 +1,39 @@
 import json
 import boto3
 
-s3=boto3.client("s3")
-
+    
 def lambda_handler(event, context):
     
-shaHash = event['pathParameters']['shaHash']
+    shaHash = event['pathParameters']['shaHash']
+    s3 = boto3.client('s3')
+    resp = s3.select_object_content(
+        Bucket = 'cs561samueltable',
+        Key = 'sha1256.csv',
+        ExpressionType = 'SQL',
+        Expression = f"Select * from s3object s where s.\"key\"='{shaHash}'",
+        InputSerialization = {'CSV': {"FileHeaderInfo": "Use"}, 'CompressionType': 'None'},
+        OutputSerialization = {'JSON': {}},
+    )
 
-    if len(shaHash) == 40:
-        file_content = s3.get_object(
-            Bucket=S3_BUCKET, Key="sha1.json")["Body"]
-        lookupTable = json.loads(file_content)
-        passwordCode = lookupTable.get(shaHash)
-    elif len(shaHash) == 64:
-        file_content = s3.get_object(
-            Bucket=S3_BUCKET, Key="sha256.json")["Body"]
-        lookupTable = json.loads(file_content)
-        passwordCode = lookupTable.get(shaHash)
-    else:
-        return{
-            'statusCode': 404,
-            'body': json.dumps({"Not Hash-1 or Hash-256 code"})
-        }
-
-    if passwordCode == None:
-        return{
-            'statusCode': 404,
-            'body': json.dumps({"Hash was not found in lookup table"})
-        }
-    return {
-            'statusCode': 200,
-            'body': json.dumps({shaHash:passwordCode})
-        }
-        
+    for event in resp['Payload']:
+        if 'Records' in event:
+            records = json.loads(event['Records']['Payload'].decode('utf-8'))
+            return {
+                'statusCode': 200,
+                'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+                },
+                'body': json.dumps({records['key']:records['value'].strip()})
+            }
+        else:
+            return{
+                'statusCode': 404,
+                'headers': {
+                "Access-Control-Allow-Headers" : "Content-Type",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+                },
+                'body': json.dumps(" message : Not in SHA-1 or SHA-256 dictionary ")
+            }
